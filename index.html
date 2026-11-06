@@ -4,95 +4,58 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scan&Pay</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-* { box-sizing:border-box; }
-body {
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f6faf7;
-  color:#193326;
-}
-header {
-  background:white;
-  padding:20px 7%;
-  border-bottom:1px solid #e3eee6;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.logo {font-size:25px;font-weight:bold;color:#159447;}
-nav a {color:#159447;text-decoration:none;margin-left:15px;font-weight:bold;}
-main {max-width:950px;margin:40px auto;padding:20px;}
-.card {
-  background:white;
-  padding:28px;
-  border:1px solid #e2ece5;
-  border-radius:16px;
-  margin:22px 0;
-}
-h1 {font-size:32px;}
-.subtitle {color:#75847a;}
-label {display:block;font-weight:bold;margin:17px 0 8px;}
-input,textarea,select {
-  width:100%;
-  padding:13px;
-  border:1px solid #d9e5dc;
-  border-radius:9px;
-  font-size:16px;
-  background:white;
-}
-button {
-  background:#159447;
-  color:white;
-  border:0;
-  padding:14px 20px;
-  border-radius:9px;
-  font-size:15px;
-  cursor:pointer;
-  margin-top:18px;
-}
-button:hover {background:#10783a;}
-.secondary {background:#e9f6ed;color:#159447;}
-.hidden {display:none;}
-.invoice {
-  padding:15px;
-  background:#f4faf5;
-  border-radius:10px;
-  margin-top:12px;
-  overflow-wrap:anywhere;
-}
-.status {color:#159447;font-weight:bold;}
-footer {text-align:center;color:#89958d;padding:30px;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f6faf7;color:#193326}
+header{background:white;padding:20px 7%;border-bottom:1px solid #e3eee6;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:25px;font-weight:bold;color:#159447}
+nav a{color:#159447;text-decoration:none;font-weight:bold}
+main{max-width:950px;margin:35px auto;padding:20px}
+.card{background:white;padding:25px;border:1px solid #e2ece5;border-radius:16px;margin:20px 0}
+h1{font-size:30px}
+.subtitle{color:#75847a}
+label{display:block;font-weight:bold;margin:16px 0 8px}
+input,textarea,select{width:100%;padding:13px;border:1px solid #d9e5dc;border-radius:9px;font-size:16px;background:white}
+button{background:#159447;color:white;border:0;padding:13px 18px;border-radius:9px;font-size:15px;cursor:pointer;margin:8px 5px 0 0}
+button:hover{background:#10783a}
+.secondary{background:#e9f6ed;color:#159447}
+.danger{background:#fff0ef;color:#b42318}
+.hidden{display:none!important}
+.invoice{padding:16px;background:#f4faf5;border-radius:10px;margin-top:12px;overflow-wrap:anywhere}
+.status{color:#159447;font-weight:bold}
+#qrArea{margin-top:20px;padding:15px;background:white;border:1px solid #e2ece5;border-radius:10px;display:inline-block}
+#qrcode{margin:10px auto}
+footer{text-align:center;color:#89958d;padding:30px}
+.small{font-size:13px;color:#75847a}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">Scan&Pay.</div>
-  <nav>
-    <a href="#" onclick="showPage('dashboard')">Dashboard</a>
-  </nav>
+  <nav><a href="#" onclick="showPage('dashboard');return false">Dashboard</a></nav>
 </header>
 
 <main>
-
-<!-- MERCHANT DASHBOARD -->
 <section id="dashboard">
   <h1>Merchant Dashboard</h1>
-  <p class="subtitle">Create invoices and share payment links with customers.</p>
+  <p class="subtitle">Create invoices, generate QR codes and share payment links.</p>
 
   <div class="card">
     <h2>Create an invoice</h2>
-
     <form id="invoiceForm">
       <label>Customer name</label>
       <input id="customer" required placeholder="Customer name">
+
+      <label>Customer email</label>
+      <input id="email" type="email" required placeholder="customer@example.com">
 
       <label>Invoice description</label>
       <textarea id="description" required placeholder="What is this invoice for?"></textarea>
 
       <label>Amount</label>
-      <input id="amount" type="number" min="0.01" step="0.01" required>
+      <input id="amount" type="number" min="0.01" step="0.01" required placeholder="0.00">
 
       <label>Currency</label>
       <select id="currency">
@@ -108,7 +71,6 @@ footer {text-align:center;color:#89958d;padding:30px;}
         <option value="JPY">JPY - Japanese Yen</option>
         <option value="INR">INR - Indian Rupee</option>
       </select>
-
       <button type="submit">Create invoice</button>
     </form>
   </div>
@@ -117,137 +79,274 @@ footer {text-align:center;color:#89958d;padding:30px;}
     <h2>Your invoices</h2>
     <div id="invoiceList">No invoices created yet.</div>
   </div>
+
+  <div class="card">
+    <h2>Invoice History</h2>
+    <div id="historyList">No invoices saved yet.</div>
+  </div>
 </section>
 
-<!-- CUSTOMER CHECKOUT -->
 <section id="checkout" class="hidden">
+  <button class="secondary" onclick="showPage('dashboard')">← Dashboard</button>
   <h1>Invoice payment</h1>
   <p class="subtitle">Review your invoice before continuing.</p>
 
   <div class="card">
     <p class="subtitle">BILL FROM</p>
     <h2>Scan&Pay Merchant</h2>
-
     <p><strong>Invoice ID:</strong> <span id="invoiceId"></span></p>
     <p><strong>Customer:</strong> <span id="checkoutCustomer"></span></p>
     <p><strong>Description:</strong> <span id="checkoutDescription"></span></p>
-
+    <p><strong>Email:</strong> <span id="checkoutEmail"></span></p>
     <h1 id="checkoutAmount"></h1>
-    <p class="status">Payment status: Pending</p>
-
-    <button onclick="alert('Payment checkout will be connected to a secure payment provider in a later development step.')">
-      Pay Now
-    </button>
-
-    <p class="subtitle">Secure payment integration coming soon.</p>
+    <p class="status" id="checkoutStatus">Payment status: Pending</p>
+    <button onclick="alert('Live payments are not connected yet. No payment has been taken.')">Pay Now</button>
+    <p class="small">Live payment integration is not connected yet.</p>
   </div>
 </section>
-
 </main>
 
 <footer>© 2026 Scan&Pay. All rights reserved.</footer>
 
 <script>
-let invoices = [];
+const STORAGE_KEY = "scanpayInvoices";
+let invoices = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
-function showPage(page) {
+function saveInvoices(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(invoices));
+}
+
+function showPage(page){
   document.getElementById("dashboard").classList.toggle("hidden",page!=="dashboard");
   document.getElementById("checkout").classList.toggle("hidden",page!=="checkout");
 }
 
-function makeId() {
-  return "SP-" + Math.random().toString(36).substring(2,10).toUpperCase();
+function makeId(){
+  return "SP-"+Math.random().toString(36).substring(2,10).toUpperCase();
 }
 
-function formatMoney(amount,currency) {
-  return new Intl.NumberFormat("en",{
-    style:"currency",
-    currency:currency
-  }).format(amount);
+function formatMoney(amount,currency){
+  return new Intl.NumberFormat("en",{style:"currency",currency}).format(amount);
 }
 
-document.getElementById("invoiceForm").addEventListener("submit",function(e) {
+function invoiceLink(invoice){
+  const url=new URL(window.location.href);
+  url.search="";
+  url.hash="";
+  url.searchParams.set("invoice",btoa(unescape(encodeURIComponent(JSON.stringify(invoice)))));
+  return url.href;
+}
+
+document.getElementById("invoiceForm").addEventListener("submit",function(e){
   e.preventDefault();
-
-  const invoice = {
+  const invoice={
     id:makeId(),
-    customer:document.getElementById("customer").value,
-    description:document.getElementById("description").value,
+    customer:document.getElementById("customer").value.trim(),
+    email:document.getElementById("email").value.trim(),
+    description:document.getElementById("description").value.trim(),
     amount:Number(document.getElementById("amount").value),
-    currency:document.getElementById("currency").value
+    currency:document.getElementById("currency").value,
+    status:"Pending",
+    created:new Date().toISOString()
   };
-
-  invoices.push(invoice);
+  invoices.unshift(invoice);
+  saveInvoices();
   displayInvoices();
+  displayHistory();
   this.reset();
 });
 
-function displayInvoices() {
-  const list = document.getElementById("invoiceList");
-  list.innerHTML = "";
+function displayInvoices(){
+  const list=document.getElementById("invoiceList");
+  list.innerHTML="";
+  if(!invoices.length){list.textContent="No invoices created yet.";return;}
 
-  invoices.forEach(invoice => {
-    const item = document.createElement("div");
-    item.className = "invoice";
+  invoices.forEach(invoice=>{
+    const item=document.createElement("div");
+    item.className="invoice";
+    const title=document.createElement("strong");
+    title.textContent=invoice.id;
+    const details=document.createElement("p");
+    details.textContent=invoice.customer+" — "+formatMoney(invoice.amount,invoice.currency);
+    const status=document.createElement("p");
+    status.className="status";
+    status.textContent="Status: "+invoice.status;
 
-    const title = document.createElement("strong");
-    title.textContent = invoice.id;
+    const checkout=document.createElement("button");
+    checkout.textContent="Open checkout";
+    checkout.onclick=()=>openCheckout(invoice.id);
 
-    const details = document.createElement("p");
-    details.textContent = invoice.customer + " — " +
-      formatMoney(invoice.amount,invoice.currency);
+    const qr=document.createElement("button");
+    qr.className="secondary";
+    qr.textContent="Show QR code";
+    qr.onclick=()=>showQR(invoice.id);
 
-    const link = document.createElement("button");
-    link.textContent = "Open customer checkout";
-    link.onclick = () => openCheckout(invoice.id);
+    const emailButton=document.createElement("button");
+    emailButton.className="secondary";
+    emailButton.textContent="Email invoice";
+    emailButton.onclick=()=>emailInvoice(invoice.id);
 
-    item.append(title,details,link);
+    const share=document.createElement("button");
+    share.className="secondary";
+    share.textContent="Copy invoice link";
+    share.onclick=()=>copyInvoiceLink(invoice.id);
+
+    const paid=document.createElement("button");
+    paid.className="secondary";
+    paid.textContent="Mark paid (demo)";
+    paid.onclick=()=>changeStatus(invoice.id,"Paid");
+
+    const expire=document.createElement("button");
+    expire.className="danger";
+    expire.textContent="Expire invoice";
+    expire.onclick=()=>changeStatus(invoice.id,"Expired");
+
+    item.append(title,details,status,checkout,qr,emailButton,share,paid,expire);
     list.appendChild(item);
   });
 }
 
-function openCheckout(id) {
-  const invoice = invoices.find(i => i.id === id);
-  if (!invoice) return;
+function displayHistory(){
+  const list=document.getElementById("historyList");
+  list.innerHTML="";
+  if(!invoices.length){list.textContent="No invoices saved yet.";return;}
 
-  document.getElementById("invoiceId").textContent = invoice.id;
-  document.getElementById("checkoutCustomer").textContent = invoice.customer;
-  document.getElementById("checkoutDescription").textContent = invoice.description;
-  document.getElementById("checkoutAmount").textContent =
-    formatMoney(invoice.amount,invoice.currency);
+  invoices.forEach(invoice=>{
+    const item=document.createElement("div");
+    item.className="invoice";
+    const title=document.createElement("strong");
+    title.textContent=invoice.id;
+    const details=document.createElement("p");
+    details.textContent=invoice.customer+" — "+formatMoney(invoice.amount,invoice.currency);
+    const status=document.createElement("p");
+    status.textContent="Status: "+invoice.status;
+    item.append(title,details,status);
+    list.appendChild(item);
+  });
+}
 
+function findInvoice(id){
+  return invoices.find(invoice=>invoice.id===id);
+}
+
+function openCheckout(id){
+  const invoice=findInvoice(id);
+  if(!invoice)return;
+  document.getElementById("invoiceId").textContent=invoice.id;
+  document.getElementById("checkoutCustomer").textContent=invoice.customer;
+  document.getElementById("checkoutDescription").textContent=invoice.description;
+  document.getElementById("checkoutEmail").textContent=invoice.email;
+  document.getElementById("checkoutAmount").textContent=formatMoney(invoice.amount,invoice.currency);
+  document.getElementById("checkoutStatus").textContent="Payment status: "+invoice.status;
   showPage("checkout");
 }
-</script>
-<section id="invoice-history" class="card">
-  <h2>Invoice History</h2>
-  <div id="history-list">
-    <p>No invoices saved yet.</p>
-  </div>
-</section>
 
-<script>
-function displayInvoiceHistory() {
-  const invoices = JSON.parse(
-    localStorage.getItem("scanpayInvoices") || "[]"
-  );
+function showQR(id){
+  const invoice=findInvoice(id);
+  if(!invoice)return;
+  const old=document.getElementById("qrArea");
+  if(old)old.remove();
 
-  const list = document.getElementById("history-list");
+  const area=document.createElement("div");
+  area.id="qrArea";
+  area.className="card";
+  const heading=document.createElement("h3");
+  heading.textContent="Invoice QR Code";
+  const qr=document.createElement("div");
+  qr.id="qrcode";
+  const note=document.createElement("p");
+  note.className="small";
+  note.textContent="Scan to open this invoice.";
+  const download=document.createElement("button");
+  download.textContent="Download QR";
+  download.onclick=downloadQR;
+  area.append(heading,qr,note,download);
+  document.getElementById("dashboard").appendChild(area);
 
-  if (!invoices.length) {
-    list.innerHTML = "<p>No invoices saved yet.</p>";
+  if(typeof QRCode==="undefined"){
+    qr.textContent="QR generator could not load. Check your internet connection.";
     return;
   }
-
-  list.innerHTML = invoices.map(invoice => `
-    <div class="invoice-history-item">
-      <strong>${invoice.id}</strong>
-      <p>${invoice.currency} ${invoice.amount}</p>
-      <p>${invoice.status || "Pending"}</p>
-    </div>
-  `).join("");
+  new QRCode(qr,{
+    text:invoiceLink(invoice),
+    width:220,
+    height:220,
+    colorDark:"#193326",
+    colorLight:"#ffffff",
+    correctLevel:QRCode.CorrectLevel.H
+  });
 }
 
-displayInvoiceHistory();
+function downloadQR(){
+  const qr=document.getElementById("qrcode");
+  if(!qr)return;
+  const canvas=qr.querySelector("canvas");
+  const image=qr.querySelector("img");
+  const source=canvas?canvas.toDataURL("image/png"):image?.src;
+  if(!source){alert("QR code is not ready yet.");return;}
+  const link=document.createElement("a");
+  link.href=source;
+  link.download="ScanPay-invoice-QR.png";
+  link.click();
+}
+
+async function copyInvoiceLink(id){
+  const invoice=findInvoice(id);
+  if(!invoice)return;
+  try{
+    await navigator.clipboard.writeText(invoiceLink(invoice));
+    alert("Invoice link copied!");
+  }catch(error){
+    prompt("Copy this invoice link:",invoiceLink(invoice));
+  }
+}
+
+function emailInvoice(id){
+  const invoice=findInvoice(id);
+  if(!invoice)return;
+  const subject="Scan&Pay Invoice "+invoice.id;
+  const body="Hello "+invoice.customer+",\n\nHere is your invoice.\n\n"+
+    "Invoice: "+invoice.id+"\n"+
+    "Description: "+invoice.description+"\n"+
+    "Amount: "+formatMoney(invoice.amount,invoice.currency)+"\n"+
+    "Status: "+invoice.status+"\n\n"+
+    "View your invoice: "+invoiceLink(invoice)+"\n\nThank you.";
+  window.location.href="mailto:"+encodeURIComponent(invoice.email)+
+    "?subject="+encodeURIComponent(subject)+
+    "&body="+encodeURIComponent(body);
+}
+
+function changeStatus(id,status){
+  const invoice=findInvoice(id);
+  if(!invoice)return;
+  invoice.status=status;
+  saveInvoices();
+  displayInvoices();
+  displayHistory();
+}
+
+function loadSharedInvoice(){
+  const data=new URLSearchParams(window.location.search).get("invoice");
+  if(!data)return;
+  try{
+    const invoice=JSON.parse(decodeURIComponent(escape(atob(data))));
+    if(!invoice.id||!invoice.amount||!invoice.currency)return;
+    document.getElementById("invoiceId").textContent=invoice.id;
+    document.getElementById("checkoutCustomer").textContent=invoice.customer;
+    document.getElementById("checkoutDescription").textContent=invoice.description;
+    document.getElementById("checkoutEmail").textContent=invoice.email||"";
+    document.getElementById("checkoutAmount").textContent=formatMoney(invoice.amount,invoice.currency);
+    document.getElementById("checkoutStatus").textContent="Payment status: "+(invoice.status||"Pending");
+    showPage("checkout");
+  }catch(error){
+    console.error("Could not load invoice",error);
+  }
+}
+
+displayInvoices();
+displayHistory();
+loadSharedInvoice();
+</script>
+
 </body>
 </html>
