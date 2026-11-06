@@ -219,6 +219,35 @@ function openCheckout(id) {
   showPage("checkout");
 }
 </script>
+<section id="invoice-history" class="card">
+  <h2>Invoice History</h2>
+  <div id="history-list">
+    <p>No invoices saved yet.</p>
+  </div>
+</section>
 
+<script>
+function displayInvoiceHistory() {
+  const invoices = JSON.parse(
+    localStorage.getItem("scanpayInvoices") || "[]"
+  );
+
+  const list = document.getElementById("history-list");
+
+  if (!invoices.length) {
+    list.innerHTML = "<p>No invoices saved yet.</p>";
+    return;
+  }
+
+  list.innerHTML = invoices.map(invoice => `
+    <div class="invoice-history-item">
+      <strong>${invoice.id}</strong>
+      <p>${invoice.currency} ${invoice.amount}</p>
+      <p>${invoice.status || "Pending"}</p>
+    </div>
+  `).join("");
+}
+
+displayInvoiceHistory();
 </body>
 </html>
